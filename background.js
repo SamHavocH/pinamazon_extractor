@@ -1,5 +1,5 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log("[Background] mensagem", message);
+  console.log("[Background]", message);
 
   if (message.type === "DOWNLOAD_IMAGE") {
     chrome.downloads.download(
@@ -10,7 +10,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       },
       (downloadId) => {
         if (chrome.runtime.lastError) {
-          console.error("[Background] download error", chrome.runtime.lastError);
           sendResponse({
             ok: false,
             error: chrome.runtime.lastError.message
@@ -18,7 +17,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           return;
         }
 
-        console.log("[Background] download ok", downloadId);
         sendResponse({
           ok: true,
           downloadId

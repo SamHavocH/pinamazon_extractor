@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Amazon Pinterest Helper",
-  "version": "1.0.1",
-  "description": "Extrai dados de produtos da Amazon para uso no Pinterest.",
+  "version": "1.2.0",
+  "description": "Salva produtos da Amazon e ajuda no fluxo para Pinterest.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -15,7 +15,9 @@
     "*://*.amazon.com.br/*",
     "*://*.amazon.es/*",
     "*://*.amazon.co.uk/*",
-    "*://*.amazon.de/*"
+    "*://*.amazon.de/*",
+    "*://*.pinterest.com/*",
+    "*://br.pinterest.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -34,6 +36,14 @@
         "*://*.amazon.de/*"
       ],
       "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.pinterest.com/*",
+        "*://br.pinterest.com/*"
+      ],
+      "js": ["pinterest-content.js"],
       "run_at": "document_idle"
     }
   ]

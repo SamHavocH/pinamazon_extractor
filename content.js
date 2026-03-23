@@ -10,22 +10,17 @@ function textOrNull(value) {
 
 function getMetaContent(selector) {
   const el = document.querySelector(selector);
-  log("getMetaContent", selector, !!el, el?.content);
   return el?.content ? el.content.trim() : null;
 }
 
 function getText(selector) {
   const el = document.querySelector(selector);
-  const value = textOrNull(el?.innerText || el?.textContent || null);
-  log("getText", selector, !!el, value);
-  return value;
+  return textOrNull(el?.innerText || el?.textContent || null);
 }
 
 function getAttribute(selector, attr) {
   const el = document.querySelector(selector);
-  const value = el?.getAttribute(attr) || null;
-  log("getAttribute", selector, attr, !!el, value);
-  return value;
+  return el?.getAttribute(attr) || null;
 }
 
 function extractASIN() {
@@ -39,33 +34,22 @@ function extractASIN() {
 
   for (const pattern of patterns) {
     const match = href.match(pattern);
-    if (match) {
-      const asin = match[1].toUpperCase();
-      log("ASIN via URL", asin);
-      return asin;
-    }
+    if (match) return match[1].toUpperCase();
   }
 
   const hiddenAsin = document.querySelector("#ASIN, input[name='ASIN'], input[name='asin']");
-  if (hiddenAsin?.value) {
-    const asin = hiddenAsin.value.toUpperCase();
-    log("ASIN via hidden input", asin);
-    return asin;
-  }
+  if (hiddenAsin?.value) return hiddenAsin.value.toUpperCase();
 
-  log("ASIN não encontrado");
   return null;
 }
 
 function extractTitle() {
-  const title =
+  return (
     getText("#productTitle") ||
     getMetaContent('meta[property="og:title"]') ||
     textOrNull(document.title.replace(/\s*:\s*Amazon.*$/i, "")) ||
-    null;
-
-  log("title final", title);
-  return title;
+    null
+  );
 }
 
 function extractImageUrl() {
@@ -77,10 +61,7 @@ function extractImageUrl() {
     getMetaContent('meta[property="og:image"]')
   ].filter(Boolean);
 
-  const imageUrl = candidates[0] || null;
-  log("image candidates", candidates);
-  log("image final", imageUrl);
-  return imageUrl;
+  return candidates[0] || null;
 }
 
 function extractDescription() {
@@ -90,44 +71,32 @@ function extractDescription() {
     .filter((t) => !t.toLowerCase().includes("certifique-se de que isso se encaixa"))
     .filter((t) => !t.toLowerCase().includes("make sure this fits"));
 
-  log("bullets", bullets);
-
   if (bullets.length) {
     return bullets.join(" • ");
   }
 
-  const description =
+  return (
     getText("#productDescription") ||
     getText("#bookDescription_feature_div") ||
     getMetaContent('meta[name="description"]') ||
-    null;
-
-  log("description final", description);
-  return description;
+    null
+  );
 }
 
 function buildCanonicalUrl(asin) {
-  const url = asin ? `${location.origin}/dp/${asin}` : window.location.href;
-  log("canonicalUrl", url);
-  return url;
+  return asin ? `${location.origin}/dp/${asin}` : window.location.href;
 }
 
 function buildAffiliateUrl(canonicalUrl, affiliateTag) {
   if (!canonicalUrl) return null;
-
   const url = new URL(canonicalUrl);
   if (affiliateTag) {
     url.searchParams.set("tag", affiliateTag);
   }
-
-  const result = url.toString();
-  log("affiliateUrl", result);
-  return result;
+  return url.toString();
 }
 
 function extractData(affiliateTag = "") {
-  log("Iniciando extração", window.location.href);
-
   const asin = extractASIN();
   const title = extractTitle();
   const imageUrl = extractImageUrl();
@@ -135,7 +104,8 @@ function extractData(affiliateTag = "") {
   const canonicalUrl = buildCanonicalUrl(asin);
   const affiliateUrl = buildAffiliateUrl(canonicalUrl, affiliateTag);
 
-  const data = {
+  return {
+    id: `${asin || "noasin"}_${Date.now()}`,
     asin,
     title,
     imageUrl,
@@ -145,16 +115,11 @@ function extractData(affiliateTag = "") {
     domain: location.hostname,
     scrapedAt: new Date().toISOString()
   };
-
-  log("data final", data);
-  return data;
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  log("Mensagem recebida", message);
-
   if (message.type === "PING") {
-    sendResponse({ ok: true, pong: true, href: location.href });
+    sendResponse({ ok: true, href: location.href });
     return true;
   }
 
@@ -163,10 +128,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const data = extractData(message.affiliateTag || "");
       sendResponse({ ok: true, data });
     } catch (error) {
-      console.error("[Amazon Helper] erro na extração", error);
       sendResponse({
         ok: false,
-        error: error?.message || "Erro ao extrair dados da página."
+        error: error?.message || "Erro ao extrair produto."
       });
     }
   }
